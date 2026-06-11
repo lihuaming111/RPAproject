@@ -30,7 +30,7 @@ jobs:
         pyinstaller --onefile --windowed --name=RpaLis RpaLis.py
         
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4 
       with:
         name: RpaLis-Windows-EXE
         path: dist/RpaLis.exe
@@ -41,4 +41,5 @@ jobs:
       with:
         files: dist/RpaLis.exe
       env:
+      
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
