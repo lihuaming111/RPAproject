@@ -192,6 +192,104 @@ class RpaWindowsTool:
         except Exception as e:
             print(f"等待窗口失败: {e}")
             return False
+    
+    def query_patient_records(self, start_date=None, end_date=None, patient_name="", clear_department=True):
+        """
+        自动查询患者记录
+        :param start_date: 起始日期，格式 YYYY/M/D，如 2026/6/1，默认为今天
+        :param end_date: 结束日期，格式 YYYY/M/D，默认为今天
+        :param patient_name: 患者姓名
+        :param clear_department: 是否清空开单科室，默认True
+        :return: 是否成功
+        """
+        import pyautogui
+        from datetime import datetime
+        
+        try:
+            # 激活医生工作站窗口
+            if not self.activate_window("医生工作站"):
+                print("未找到医生工作站窗口")
+                return False
+            
+            time.sleep(1)
+            
+            # 如果未提供日期，使用今天
+            today = datetime.now()
+            if start_date is None:
+                start_date = f"{today.year}/{today.month}/{today.day}"
+            if end_date is None:
+                end_date = f"{today.year}/{today.month}/{today.day}"
+            
+            print(f"开始查询: 日期 {start_date} 至 {end_date}, 姓名: {patient_name}")
+            
+            # 步骤1: 选择起始日期
+            print("步骤1: 设置起始日期...")
+            # Tab到起始日期字段（假设从当前焦点开始）
+            pyautogui.press('tab')
+            time.sleep(0.3)
+            # 清除现有内容
+            pyautogui.hotkey('ctrl', 'a')
+            time.sleep(0.2)
+            # 输入起始日期
+            pyautogui.typewrite(start_date)
+            time.sleep(0.5)
+            
+            # 步骤2: 选择结束日期
+            print("步骤2: 设置结束日期...")
+            pyautogui.press('tab')
+            time.sleep(0.3)
+            pyautogui.hotkey('ctrl', 'a')
+            time.sleep(0.2)
+            pyautogui.typewrite(end_date)
+            time.sleep(0.5)
+            
+            # 步骤3: 输入姓名
+            print("步骤3: 输入患者姓名...")
+            pyautogui.press('tab')
+            time.sleep(0.3)
+            if patient_name:
+                pyautogui.hotkey('ctrl', 'a')
+                time.sleep(0.2)
+                pyautogui.typewrite(patient_name)
+            else:
+                # 如果不需要姓名，清空该字段
+                pyautogui.hotkey('ctrl', 'a')
+                time.sleep(0.2)
+                pyautogui.press('delete')
+            time.sleep(0.5)
+            
+            # 步骤4: 清空开单科室
+            if clear_department:
+                print("步骤4: 清空开单科室...")
+                # Tab到开单科室内
+                pyautogui.press('tab')
+                time.sleep(0.3)
+                pyautogui.press('tab')
+                time.sleep(0.3)
+                # 选择空值或清空
+                pyautogui.hotkey('ctrl', 'a')
+                time.sleep(0.2)
+                pyautogui.press('delete')
+                time.sleep(0.5)
+            
+            # 步骤5: 点击查询按钮
+            print("步骤5: 点击查询按钮...")
+            # 继续Tab到查询按钮
+            for _ in range(3):  # 可能需要多次Tab
+                pyautogui.press('tab')
+                time.sleep(0.2)
+            # 按回车或空格点击按钮
+            pyautogui.press('return')
+            time.sleep(2)
+            
+            print("✓ 查询操作完成")
+            return True
+            
+        except Exception as e:
+            print(f" 查询失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
 
 # ==================== 使用示例 ====================
@@ -236,6 +334,43 @@ def example_open_doctor_workstation_v2():
     print("\n任务完成！")
 
 
+def example_query_patient():
+    """查询患者记录示例"""
+    rpa = RpaWindowsTool()
+    
+    print("\n" + "=" * 60)
+    print("示例：自动查询患者记录")
+    print("=" * 60)
+    
+    # 先打开医生工作站
+    if not rpa.open_doctor_workstation():
+        print("打开医生工作站失败")
+        return
+    
+    # 等待窗口完全加载
+    time.sleep(3)
+    
+    # 执行查询
+    # 参数说明：
+    # start_date: 起始日期，如 "2026/6/1"
+    # end_date: 结束日期，如 "2026/6/12"
+    # patient_name: 患者姓名，如 "张三"
+    # clear_department: 是否清空开单科室，默认True
+    success = rpa.query_patient_records(
+        start_date="2026/6/1",
+        end_date="2026/6/12",
+        patient_name="",  # 空字符串表示不限制姓名
+        clear_department=True
+    )
+    
+    if success:
+        print("✓ 查询操作成功完成")
+    else:
+        print("✗ 查询操作失败")
+    
+    print("\n任务完成！")
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("Windows RPA工具 - 医生工作站自动化")
@@ -244,15 +379,16 @@ if __name__ == "__main__":
     print("1. open_application - 打开任意Windows程序")
     print("2. open_doctor_workstation - 打开医生工作站")
     print("3. open_doctor_workstation_v2 - 打开医生工作站V2")
-    print("4. close_application - 关闭应用程序")
-    print("5. activate_window - 激活窗口")
-    print("6. send_keys_to_window - 向窗口发送按键")
-    print("7. take_screenshot - 截图")
-    print("8. wait_for_window - 等待窗口出现")
+    print("4. query_patient_records - 查询患者记录")
+    print("5. close_application - 关闭应用程序")
+    print("6. activate_window - 激活窗口")
+    print("7. send_keys_to_window - 向窗口发送按键")
+    print("8. take_screenshot - 截图")
+    print("9. wait_for_window - 等待窗口出现")
     print("\n运行示例...")
     
-    # 运行打开医生工作站示例
-    example_open_doctor_workstation()
+    # 运行自动查询示例
+    example_query_patient()
     
     print("\n提示: 使用前请安装依赖包:")
     print("pip install pyautogui pygetwindow")
