@@ -204,51 +204,32 @@ class RpaWindowsTool:
         """
         import pyautogui
         from datetime import datetime
-        
+            
         try:
             # 激活医生工作站窗口
             if not self.activate_window("医生工作站"):
                 print("未找到医生工作站窗口")
                 return False
-            
+                
             time.sleep(1)
-            
+                
             # 如果未提供日期，使用今天
             today = datetime.now()
             if start_date is None:
                 start_date = f"{today.year}/{today.month}/{today.day}"
             if end_date is None:
                 end_date = f"{today.year}/{today.month}/{today.day}"
-            
+                
             print(f"开始查询: 日期 {start_date} 至 {end_date}, 姓名: {patient_name}")
-            
-            # 步骤1: 选择起始日期
-            print("步骤1: 设置起始日期...")
-            # Tab到起始日期字段（假设从当前焦点开始）
-            pyautogui.press('tab')
-            time.sleep(0.3)
-            # 清除现有内容
-            pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.2)
-            # 输入起始日期
-            pyautogui.typewrite(start_date)
-            time.sleep(0.5)
-            
-            # 步骤2: 选择结束日期
-            print("步骤2: 设置结束日期...")
-            pyautogui.press('tab')
-            time.sleep(0.3)
-            pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.2)
-            pyautogui.typewrite(end_date)
-            time.sleep(0.5)
-            
-            # 步骤3: 输入姓名
-            print("步骤3: 输入患者姓名...")
-            pyautogui.press('tab')
-            time.sleep(0.3)
+                
+            # 注意：打开界面后焦点在"姓名"字段
+            # 根据截图的字段顺序：姓名 -> ID号 -> 开单科室 -> 开单医生 -> 就诊类型 -> 打印状态 -> 查询按钮
+            # 我们需要先处理姓名，然后反向Tab到日期字段
+                
+            # 步骤1: 先输入姓名（当前焦点就在姓名字段）
+            print("步骤1: 输入患者姓名...")
             if patient_name:
-                pyautogui.hotkey('ctrl', 'a')
+                pyautogui.hotkey('ctrl', 'a')  # 全选
                 time.sleep(0.2)
                 pyautogui.typewrite(patient_name)
             else:
@@ -257,36 +238,58 @@ class RpaWindowsTool:
                 time.sleep(0.2)
                 pyautogui.press('delete')
             time.sleep(0.5)
-            
-            # 步骤4: 清空开单科室
+                
+            # 步骤2: Tab到ID号，继续Tab到开单科室
+            print("步骤2: 移动到开单科室内...")
+            pyautogui.press('tab')  # 到ID号
+            time.sleep(0.2)
+            pyautogui.press('tab')  # 到开单科室
+            time.sleep(0.3)
+                
+            # 步骤3: 清空开单科室
             if clear_department:
-                print("步骤4: 清空开单科室...")
-                # Tab到开单科室内
-                pyautogui.press('tab')
-                time.sleep(0.3)
-                pyautogui.press('tab')
-                time.sleep(0.3)
-                # 选择空值或清空
+                print("步骤3: 清空开单科室...")
                 pyautogui.hotkey('ctrl', 'a')
                 time.sleep(0.2)
                 pyautogui.press('delete')
-                time.sleep(0.5)
-            
-            # 步骤5: 点击查询按钮
-            print("步骤5: 点击查询按钮...")
-            # 继续Tab到查询按钮
-            for _ in range(3):  # 可能需要多次Tab
+                time.sleep(0.3)
+                
+            # 步骤4: Shift+Tab 反向回到起始日期
+            # 从开单科室反向Tab：开单科室 <- 开单医生 <- 就诊类型 <- 打印状态 <- 查询在院病人 <- ID号 <- 姓名 <- 标本号 <- 结束日期 <- 起始日期
+            print("步骤4: 设置结束日期...")
+            for _ in range(8):  # 反向Tab到结束日期
+                pyautogui.hotkey('shift', 'tab')
+                time.sleep(0.15)
+                
+            # 输入结束日期
+            pyautogui.hotkey('ctrl', 'a')
+            time.sleep(0.2)
+            pyautogui.typewrite(end_date)
+            time.sleep(0.3)
+                
+            print("步骤5: 设置起始日期...")
+            pyautogui.hotkey('shift', 'tab')  # 反向Tab到起始日期
+            time.sleep(0.2)
+            pyautogui.hotkey('ctrl', 'a')
+            time.sleep(0.2)
+            pyautogui.typewrite(start_date)
+            time.sleep(0.5)
+                
+            # 步骤6: Tab到查询按钮并点击
+            print("步骤6: 点击查询按钮...")
+            # 从起始日期正向Tab到查询按钮
+            for _ in range(10):  # 可能需要多次Tab
                 pyautogui.press('tab')
-                time.sleep(0.2)
+                time.sleep(0.15)
             # 按回车或空格点击按钮
             pyautogui.press('return')
             time.sleep(2)
-            
+                
             print("✓ 查询操作完成")
             return True
-            
+                
         except Exception as e:
-            print(f" 查询失败: {e}")
+            print(f"✗ 查询失败: {e}")
             import traceback
             traceback.print_exc()
             return False
